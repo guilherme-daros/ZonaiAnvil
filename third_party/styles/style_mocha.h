@@ -1,11 +1,11 @@
-#ifndef STYLE_TERMINAL_H
-#define STYLE_TERMINAL_H
+#ifndef STYLE_MOCHA_H
+#define STYLE_MOCHA_H
 
 //////////////////////////////////////////////////////////////////////////////////
 //                                                                              //
 // StyleAsCode exporter v2.0 - Style data exported as a values array            //
 //                                                                              //
-// USAGE: On init call: GuiLoadStyleTerminal();                                   //
+// USAGE: On init call: GuiLoadStyleMocha();                                    //
 //                                                                              //
 // more info and bugs-report:  github.com/raysan5/raygui                        //
 // feedback and support:       ray[at]raylibtech.com                            //
@@ -14,35 +14,35 @@
 //                                                                              //
 //////////////////////////////////////////////////////////////////////////////////
 
-#define TERMINAL_STYLE_PROPS_COUNT  17
+#define MOCHA_STYLE_PROPS_COUNT  17
 
-// Custom style name: Terminal
-static const GuiStyleProp terminalStyleProps[TERMINAL_STYLE_PROPS_COUNT] = {
-    { 0, 0, (int)0x1c8d00ff },    // DEFAULT_BORDER_COLOR_NORMAL 
-    { 0, 1, (int)0x161313ff },    // DEFAULT_BASE_COLOR_NORMAL 
-    { 0, 2, (int)0x38f620ff },    // DEFAULT_TEXT_COLOR_NORMAL 
-    { 0, 3, (int)0xc3fbc6ff },    // DEFAULT_BORDER_COLOR_FOCUSED 
-    { 0, 4, (int)0x43bf2eff },    // DEFAULT_BASE_COLOR_FOCUSED 
-    { 0, 5, (int)0xdcfadcff },    // DEFAULT_TEXT_COLOR_FOCUSED 
-    { 0, 6, (int)0x1f5b19ff },    // DEFAULT_BORDER_COLOR_PRESSED 
-    { 0, 7, (int)0x43ff28ff },    // DEFAULT_BASE_COLOR_PRESSED 
-    { 0, 8, (int)0x1e6f15ff },    // DEFAULT_TEXT_COLOR_PRESSED 
-    { 0, 9, (int)0x223b22ff },    // DEFAULT_BORDER_COLOR_DISABLED 
-    { 0, 10, (int)0x182c18ff },    // DEFAULT_BASE_COLOR_DISABLED 
-    { 0, 11, (int)0x244125ff },    // DEFAULT_TEXT_COLOR_DISABLED 
-    { 0, 16, (int)0x00000010 },    // DEFAULT_TEXT_SIZE 
-    { 0, 17, (int)0x00000000 },    // DEFAULT_TEXT_SPACING 
-    { 0, 18, (int)0xe6fce3ff },    // DEFAULT_LINE_COLOR 
-    { 0, 19, (int)0x0c1505ff },    // DEFAULT_BACKGROUND_COLOR 
-    { 0, 20, (int)0x00000008 },    // DEFAULT_TEXT_LINE_SPACING 
+// Custom style name: Mocha (Catppuccin)
+static const GuiStyleProp mochaStyleProps[MOCHA_STYLE_PROPS_COUNT] = {
+    { 0, 0, (int)0x6c7086ff },    // DEFAULT_BORDER_COLOR_NORMAL   (Overlay 0)
+    { 0, 1, (int)0x313244ff },    // DEFAULT_BASE_COLOR_NORMAL     (Surface 0)
+    { 0, 2, (int)0xcdd6f4ff },    // DEFAULT_TEXT_COLOR_NORMAL     (Text)
+    { 0, 3, (int)0xb4befeff },    // DEFAULT_BORDER_COLOR_FOCUSED  (Lavender)
+    { 0, 4, (int)0x45475aff },    // DEFAULT_BASE_COLOR_FOCUSED    (Surface 1)
+    { 0, 5, (int)0xcdd6f4ff },    // DEFAULT_TEXT_COLOR_FOCUSED    (Text)
+    { 0, 6, (int)0x89b4faff },    // DEFAULT_BORDER_COLOR_PRESSED  (Blue)
+    { 0, 7, (int)0x585b70ff },    // DEFAULT_BASE_COLOR_PRESSED    (Surface 2)
+    { 0, 8, (int)0xcdd6f4ff },    // DEFAULT_TEXT_COLOR_PRESSED    (Text)
+    { 0, 9, (int)0x45475aff },    // DEFAULT_BORDER_COLOR_DISABLED (Surface 1)
+    { 0, 10, (int)0x181825ff },   // DEFAULT_BASE_COLOR_DISABLED   (Mantle)
+    { 0, 11, (int)0x6c7086ff },   // DEFAULT_TEXT_COLOR_DISABLED   (Overlay 0)
+    { 0, 16, (int)0x00000010 },   // DEFAULT_TEXT_SIZE 
+    { 0, 17, (int)0x00000000 },   // DEFAULT_TEXT_SPACING 
+    { 0, 18, (int)0x6c7086ff },   // DEFAULT_LINE_COLOR            (Overlay 0)
+    { 0, 19, (int)0x1e1e2eff },   // DEFAULT_BACKGROUND_COLOR      (Base)
+    { 0, 20, (int)0x00000008 },   // DEFAULT_TEXT_LINE_SPACING 
 };
 
 // WARNING: This style uses a custom font: "Mecha.ttf" (size: 16, spacing: 0)
 
-#define TERMINAL_STYLE_FONT_ATLAS_COMP_SIZE 1860
+#define MOCHA_STYLE_FONT_ATLAS_COMP_SIZE 1860
 
 // Font atlas image pixels data: DEFLATE compressed
-static unsigned char terminalFontData[TERMINAL_STYLE_FONT_ATLAS_COMP_SIZE] = { 0xed,
+static unsigned char mochaFontData[MOCHA_STYLE_FONT_ATLAS_COMP_SIZE] = { 0xed,
     0xdd, 0x41, 0x92, 0xa4, 0x36, 0x10, 0x05, 0x50, 0xee, 0x7f, 0xe9, 0xf4, 0x62, 0x62, 0x16, 0x76, 0xb8, 0x1b, 0x94, 0x4a,
     0x89, 0x04, 0x9e, 0x5f, 0x78, 0xd3, 0xd5, 0x53, 0x4d, 0x01, 0xbf, 0x24, 0x84, 0x94, 0xc4, 0x01, 0x00, 0x00, 0x00, 0x7c,
     0x5e, 0xfc, 0xef, 0x4f, 0xe2, 0xc7, 0xdf, 0x8c, 0xcb, 0xef, 0xf3, 0xe7, 0xa7, 0xf1, 0xe3, 0x5f, 0xf9, 0xfb, 0xdf, 0x95,
@@ -138,7 +138,7 @@ static unsigned char terminalFontData[TERMINAL_STYLE_FONT_ATLAS_COMP_SIZE] = { 0
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf6, 0xf9, 0xf3, 0x9f, 0xfd, 0x00, 0xf2, 0x0f, 0x7c, 0x2e, 0xff, 0xff, 0x00 };
 
 // Font glyphs rectangles data (on atlas)
-static const Rectangle terminalFontRecs[189] = {
+static const Rectangle mochaFontRecs[189] = {
     { 4, 4, 4 , 16 },
     { 16, 4, 1 , 11 },
     { 25, 4, 3 , 3 },
@@ -268,8 +268,8 @@ static const Rectangle terminalFontRecs[189] = {
     { 4, 76, 5 , 14 },
     { 17, 76, 5 , 14 },
     { 30, 76, 5 , 14 },
-    { 43, 76, 5 , 13 },
-    { 56, 76, 5 , 13 },
+    { 43, 76, 5 , 14 },
+    { 56, 76, 5 , 14 },
     { 69, 76, 9 , 11 },
     { 86, 76, 5 , 13 },
     { 99, 76, 5 , 14 },
@@ -332,7 +332,7 @@ static const Rectangle terminalFontRecs[189] = {
 
 // Font glyphs info data
 // NOTE: No glyphs.image data provided
-static const GlyphInfo terminalFontGlyphs[189] = {
+static const GlyphInfo mochaFontGlyphs[189] = {
     { 32, 0, 0, 4, { 0 }},
     { 33, 1, 3, 3, { 0 }},
     { 34, 1, 3, 5, { 0 }},
@@ -524,20 +524,20 @@ static const GlyphInfo terminalFontGlyphs[189] = {
     { 255, 1, 4, 7, { 0 }},
 };
 
-// Style loading function: Terminal
-static void GuiLoadStyleTerminal(void)
+// Style loading function: Mocha
+static void GuiLoadStyleMocha(void)
 {
     // Load style properties provided
     // NOTE: Default properties are propagated
-    for (int i = 0; i < TERMINAL_STYLE_PROPS_COUNT; i++)
+    for (int i = 0; i < MOCHA_STYLE_PROPS_COUNT; i++)
     {
-        GuiSetStyle(terminalStyleProps[i].controlId, terminalStyleProps[i].propertyId, terminalStyleProps[i].propertyValue);
+        GuiSetStyle(mochaStyleProps[i].controlId, mochaStyleProps[i].propertyId, mochaStyleProps[i].propertyValue);
     }
 
     // Custom font loading
     // NOTE: Compressed font image data (DEFLATE), it requires DecompressData() function
-    int terminalFontDataSize = 0;
-    unsigned char *data = DecompressData(terminalFontData, TERMINAL_STYLE_FONT_ATLAS_COMP_SIZE, &terminalFontDataSize);
+    int mochaFontDataSize = 0;
+    unsigned char *data = DecompressData(mochaFontData, MOCHA_STYLE_FONT_ATLAS_COMP_SIZE, &mochaFontDataSize);
     Image imFont = { data, 512, 256, 1, 2 };
 
     Font font = { 0 };
@@ -551,12 +551,12 @@ static void GuiLoadStyleTerminal(void)
     // Copy char recs data from global fontRecs
     // NOTE: Required to avoid issues if trying to free font
     font.recs = (Rectangle *)RAYGUI_MALLOC(font.glyphCount*sizeof(Rectangle));
-    memcpy(font.recs, terminalFontRecs, font.glyphCount*sizeof(Rectangle));
+    memcpy(font.recs, mochaFontRecs, font.glyphCount*sizeof(Rectangle));
 
     // Copy font char info data from global fontChars
     // NOTE: Required to avoid issues if trying to free font
     font.glyphs = (GlyphInfo *)RAYGUI_MALLOC(font.glyphCount*sizeof(GlyphInfo));
-    memcpy(font.glyphs, terminalFontGlyphs, font.glyphCount*sizeof(GlyphInfo));
+    memcpy(font.glyphs, mochaFontGlyphs, font.glyphCount*sizeof(GlyphInfo));
 
     GuiSetFont(font);
 
@@ -564,10 +564,5 @@ static void GuiLoadStyleTerminal(void)
     // it makes possible to draw shapes and text (full UI) in a single draw call
     Rectangle fontWhiteRec = { 510, 254, 1, 1 };
     SetShapesTexture(font.texture, fontWhiteRec);
-
-    //-----------------------------------------------------------------
-
-    // TODO: Custom user style setup: Set specific properties here (if required)
-    // i.e. Controls specific BORDER_WIDTH, TEXT_PADDING, TEXT_ALIGNMENT
 }
-#endif // STYLE_TERMINAL_H
+#endif // STYLE_MOCHA_H

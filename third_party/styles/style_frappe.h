@@ -1,31 +1,30 @@
-#ifndef STYLE_TERMX_H
-#define STYLE_TERMX_H
+#ifndef STYLE_FRAPPE_H
+#define STYLE_FRAPPE_H
 
-#define TERMX_STYLE_PROPS_COUNT  17
+#define FRAPPE_STYLE_PROPS_COUNT  17
 
-// Custom style name: TermX (Orange Terminal)
-static const GuiStyleProp termxStyleProps[TERMX_STYLE_PROPS_COUNT] = {
-    { 0, 0, (int)0x8d4a00ff },    // DEFAULT_BORDER_COLOR_NORMAL 
-    { 0, 1, (int)0x161313ff },    // DEFAULT_BASE_COLOR_NORMAL 
-    { 0, 2, (int)0xffa500ff },    // DEFAULT_TEXT_COLOR_NORMAL (Orange)
-    { 0, 3, (int)0xffd700ff },    // DEFAULT_BORDER_COLOR_FOCUSED (Gold)
-    { 0, 4, (int)0xbf7a2eff },    // DEFAULT_BASE_COLOR_FOCUSED 
-    { 0, 5, (int)0xffefd5ff },    // DEFAULT_TEXT_COLOR_FOCUSED (PapayaWhip)
-    { 0, 6, (int)0x5b3a19ff },    // DEFAULT_BORDER_COLOR_PRESSED 
-    { 0, 7, (int)0xff8c00ff },    // DEFAULT_BASE_COLOR_PRESSED (DarkOrange)
-    { 0, 8, (int)0x6f4a15ff },    // DEFAULT_TEXT_COLOR_PRESSED 
-    { 0, 9, (int)0x3b2a22ff },    // DEFAULT_BORDER_COLOR_DISABLED 
-    { 0, 10, (int)0x2c1e18ff },    // DEFAULT_BASE_COLOR_DISABLED 
-    { 0, 11, (int)0x412d25ff },    // DEFAULT_TEXT_COLOR_DISABLED 
-    { 0, 16, (int)0x00000010 },    // DEFAULT_TEXT_SIZE 
-    { 0, 17, (int)0x00000000 },    // DEFAULT_TEXT_SPACING 
-    { 0, 18, (int)0xfce9e3ff },    // DEFAULT_LINE_COLOR 
-    { 0, 19, (int)0x150a05ff },    // DEFAULT_BACKGROUND_COLOR 
-    { 0, 20, (int)0x00000008 },    // DEFAULT_TEXT_LINE_SPACING 
+static const GuiStyleProp frappeStyleProps[FRAPPE_STYLE_PROPS_COUNT] = {
+    { 0, 0, (int)0x737994ff },    // DEFAULT_BORDER_COLOR_NORMAL   (Overlay 0)
+    { 0, 1, (int)0x414559ff },    // DEFAULT_BASE_COLOR_NORMAL     (Surface 0)
+    { 0, 2, (int)0xc6d0f5ff },    // DEFAULT_TEXT_COLOR_NORMAL     (Text)
+    { 0, 3, (int)0xbabbf1ff },    // DEFAULT_BORDER_COLOR_FOCUSED  (Lavender)
+    { 0, 4, (int)0x51576dff },    // DEFAULT_BASE_COLOR_FOCUSED    (Surface 1)
+    { 0, 5, (int)0xc6d0f5ff },    // DEFAULT_TEXT_COLOR_FOCUSED    (Text)
+    { 0, 6, (int)0x8caaeeff },    // DEFAULT_BORDER_COLOR_PRESSED  (Blue)
+    { 0, 7, (int)0x626880ff },    // DEFAULT_BASE_COLOR_PRESSED    (Surface 2)
+    { 0, 8, (int)0xc6d0f5ff },    // DEFAULT_TEXT_COLOR_PRESSED    (Text)
+    { 0, 9, (int)0x51576dff },    // DEFAULT_BORDER_COLOR_DISABLED (Surface 1)
+    { 0, 10, (int)0x292c3cff },   // DEFAULT_BASE_COLOR_DISABLED   (Mantle)
+    { 0, 11, (int)0x737994ff },   // DEFAULT_TEXT_COLOR_DISABLED   (Overlay 0)
+    { 0, 16, (int)0x00000010 },   // DEFAULT_TEXT_SIZE 
+    { 0, 17, (int)0x00000000 },   // DEFAULT_TEXT_SPACING 
+    { 0, 18, (int)0x737994ff },   // DEFAULT_LINE_COLOR            (Overlay 0)
+    { 0, 19, (int)0x303446ff },   // DEFAULT_BACKGROUND_COLOR      (Base)
+    { 0, 20, (int)0x00000008 },   // DEFAULT_TEXT_LINE_SPACING 
 };
 
-#define TERMX_STYLE_FONT_ATLAS_COMP_SIZE 1860
-static unsigned char termxFontData[TERMX_STYLE_FONT_ATLAS_COMP_SIZE] = { 0xed,
+#define FRAPPE_STYLE_FONT_ATLAS_COMP_SIZE 1860
+static unsigned char frappeFontData[FRAPPE_STYLE_FONT_ATLAS_COMP_SIZE] = { 0xed,
     0xdd, 0x41, 0x92, 0xa4, 0x36, 0x10, 0x05, 0x50, 0xee, 0x7f, 0xe9, 0xf4, 0x62, 0x62, 0x16, 0x76, 0xb8, 0x1b, 0x94, 0x4a,
     0x89, 0x04, 0x9e, 0x5f, 0x78, 0xd3, 0xd5, 0x53, 0x4d, 0x01, 0xbf, 0x24, 0x84, 0x94, 0xc4, 0x01, 0x00, 0x00, 0x00, 0x7c,
     0x5e, 0xfc, 0xef, 0x4f, 0xe2, 0xc7, 0xdf, 0x8c, 0xcb, 0xef, 0xf3, 0xe7, 0xa7, 0xf1, 0xe3, 0x5f, 0xf9, 0xfb, 0xdf, 0x95,
@@ -120,7 +119,7 @@ static unsigned char termxFontData[TERMX_STYLE_FONT_ATLAS_COMP_SIZE] = { 0xed,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf6, 0xf9, 0xf3, 0x9f, 0xfd, 0x00, 0xf2, 0x0f, 0x7c, 0x2e, 0xff, 0xff, 0x00 };
 
-static const Rectangle termxFontRecs[189] = {
+static const Rectangle frappeFontRecs[189] = {
     { 4, 4, 4 , 16 }, { 16, 4, 1 , 11 }, { 25, 4, 3 , 3 }, { 36, 4, 6 , 11 }, { 50, 4, 5 , 11 },
     { 63, 4, 5 , 11 }, { 76, 4, 5 , 11 }, { 89, 4, 1 , 2 }, { 98, 4, 2 , 13 }, { 108, 4, 2 , 13 },
     { 118, 4, 3 , 3 }, { 129, 4, 5 , 5 }, { 142, 4, 1 , 3 }, { 151, 4, 5 , 1 }, { 164, 4, 1 , 1 },
@@ -161,7 +160,7 @@ static const Rectangle termxFontRecs[189] = {
     { 254, 100, 5 , 10 }, { 267, 100, 5 , 13 }, { 280, 100, 4 , 8 }, { 292, 100, 5 , 12 },
 };
 
-static const GlyphInfo termxFontGlyphs[189] = {
+static const GlyphInfo frappeFontGlyphs[189] = {
     { 32, 0, 0, 4, { 0 }}, { 33, 1, 3, 3, { 0 }}, { 34, 1, 3, 5, { 0 }}, { 35, 1, 3, 8, { 0 }}, { 36, 1, 3, 7, { 0 }},
     { 37, 1, 3, 7, { 0 }}, { 38, 1, 3, 7, { 0 }}, { 39, 1, 3, 3, { 0 }}, { 40, 1, 2, 4, { 0 }}, { 41, 1, 2, 4, { 0 }},
     { 42, 1, 3, 5, { 0 }}, { 43, 1, 7, 7, { 0 }}, { 44, 1, 13, 3, { 0 }}, { 45, 1, 9, 7, { 0 }}, { 46, 1, 13, 3, { 0 }},
@@ -202,32 +201,26 @@ static const GlyphInfo termxFontGlyphs[189] = {
     { 252, 1, 4, 7, { 0 }}, { 253, 1, 3, 7, { 0 }}, { 254, 1, 6, 6, { 0 }}, { 255, 1, 4, 7, { 0 }},
 };
 
-static void GuiLoadStyleTermX(void)
+static void GuiLoadStyleFrappe(void)
 {
-    for (int i = 0; i < TERMX_STYLE_PROPS_COUNT; i++)
+    for (int i = 0; i < FRAPPE_STYLE_PROPS_COUNT; i++)
     {
-        GuiSetStyle(termxStyleProps[i].controlId, termxStyleProps[i].propertyId, termxStyleProps[i].propertyValue);
+        GuiSetStyle(frappeStyleProps[i].controlId, frappeStyleProps[i].propertyId, frappeStyleProps[i].propertyValue);
     }
-
-    int terminalFontDataSize = 0;
-    unsigned char *data = DecompressData(termxFontData, TERMX_STYLE_FONT_ATLAS_COMP_SIZE, &terminalFontDataSize);
+    int frappeFontDataSize = 0;
+    unsigned char *data = DecompressData(frappeFontData, FRAPPE_STYLE_FONT_ATLAS_COMP_SIZE, &frappeFontDataSize);
     Image imFont = { data, 512, 256, 1, 2 };
-
     Font font = { 0 };
     font.baseSize = 16;
     font.glyphCount = 189;
     font.texture = LoadTextureFromImage(imFont);
     UnloadImage(imFont);
-
     font.recs = (Rectangle *)RAYGUI_MALLOC(font.glyphCount*sizeof(Rectangle));
-    memcpy(font.recs, termxFontRecs, font.glyphCount*sizeof(Rectangle));
-
+    memcpy(font.recs, frappeFontRecs, font.glyphCount*sizeof(Rectangle));
     font.glyphs = (GlyphInfo *)RAYGUI_MALLOC(font.glyphCount*sizeof(GlyphInfo));
-    memcpy(font.glyphs, termxFontGlyphs, font.glyphCount*sizeof(GlyphInfo));
-
+    memcpy(font.glyphs, frappeFontGlyphs, font.glyphCount*sizeof(GlyphInfo));
     GuiSetFont(font);
     Rectangle fontWhiteRec = { 510, 254, 1, 1 };
     SetShapesTexture(font.texture, fontWhiteRec);
 }
-
-#endif // STYLE_TERMX_H
+#endif
