@@ -1,5 +1,5 @@
 #pragma once
-#include <iostream>
+#include "Log.hpp"
 #include <string>
 #include "sml.hpp"
 
@@ -20,16 +20,16 @@ struct WelcomeTimerEvent {};
 struct OpenConnection {
   template <class TEvent>
   void operator()(const TEvent& event) {
-    std::cout << "[SM] Action: Opening connection to " << event.port << std::endl;
+    Log::SM::Info() << "Opening connection to " << event.port;
   }
 };
 
 struct RequestSchema {
-  void operator()() { std::cout << "[SM] Action: Requesting Schema from device..." << std::endl; }
+  void operator()() { Log::SM::Info() << "Requesting Schema from device..."; }
 };
 
 struct CloseConnection {
-  void operator()() { std::cout << "[SM] Action: Closing connection" << std::endl; }
+  void operator()() { Log::SM::Info() << "Closing connection"; }
 };
 
 // State Machine Definition

@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstring>
-#include <iostream>
+#include "Log.hpp"
 #include <vector>
 #include "ICommunication.hpp"
 #include "Protocol.hpp"
@@ -51,7 +51,7 @@ class MockSerialPort : public ICommunication {
                   {27, static_cast<uint8_t>(Protocol::ParamType::kString), "Str 2", 0.0f, 0.0f, 0.0f, "World"}};
       }
 
-      std::cout << "[MOCK] Connected to " << port << " with " << params.size() << " parameters." << std::endl;
+      Log::Mock::Info() << "Connected to " << port << " with " << params.size() << " parameters.";
       return true;
     }
     return false;
@@ -59,7 +59,7 @@ class MockSerialPort : public ICommunication {
 
   void close() override {
     if (isOpenFlag) {
-      std::cout << "[MOCK] Disconnected from " << activePortName << "." << std::endl;
+      Log::Mock::Info() << "Disconnected from " << activePortName << ".";
       isOpenFlag = false;
       delayedResponses.clear();
     }
@@ -122,14 +122,17 @@ class MockSerialPort : public ICommunication {
                 uint8_t strLen = data[sizeof(Protocol::PacketHeader) + 1];
                 p.stringValue =
                     std::string(reinterpret_cast<const char*>(&data[sizeof(Protocol::PacketHeader) + 2]), strLen);
-                std::cout << "[MOCK:" << activePortName << "] Param " << (int)id << " updated to \"" << p.stringValue
-                          << "\" (ACK in 500ms)" << std::endl;
+                Log::Mock::Info() << "[" << activePortName << "] Param " << (int)id << " updated to \""
+                                  << p.stringValue << "\" (ACK in 500ms)";
+                queueLog(0, "String parameter updated: " + p.stringValue);
               } else {
                 float newVal;
                 std::memcpy(&newVal, &data[sizeof(Protocol::PacketHeader) + 1], 4);
                 p.value = newVal;
-                std::cout << "[MOCK:" << activePortName << "] Param " << (int)id << " updated to " << newVal
-                          << " (ACK in 500ms)" << std::endl;
+                Log::Mock::Info() << "[" << activePortName << "] Param " << (int)id << " updated to " << newVal
+                                  << " (ACK in 500ms)";
+                queueLog(0, "Value updated: " + std::to_string(newVal));
+                if (newVal > 90.0f) queueLog(1, "Warning: Value is high!");
               }
               break;
             }
@@ -171,6 +174,13 @@ class MockSerialPort : public ICommunication {
   std::vector<std::string> listPorts() override { return {"ttyMock1", "ttyMock2", "ttyMock3"}; }
 
  private:
+  void queueLog(uint8_t level, const std::string& msg) {
+    std::vector<uint8_t> payload;
+    payload.push_back(level);
+    payload.insert(payload.end(), msg.begin(), msg.end());
+    queueDelayedResponse(Protocol::Command::kLog, payload);
+  }
+
   void queueDelayedResponse(Protocol::Command cmd, const std::vector<uint8_t>& payload) {
     Protocol::PacketHeader header;
     header.startByte = Protocol::kStartByte;

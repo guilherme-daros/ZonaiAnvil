@@ -22,6 +22,8 @@ set(COMMON_SOURCES
     src/ProtocolHandler.cpp
 )
 
+add_subdirectory(third_party/sb-logger)
+
 # Main Application
 add_executable(ZonaiAnvil
     apps/ZonaiAnvil/main.cpp
@@ -34,4 +36,4 @@ target_include_directories(ZonaiAnvil PRIVATE
     third_party
 )
 
-target_link_libraries(ZonaiAnvil PRIVATE raylib m pthread dl rt X11)
+target_link_libraries(ZonaiAnvil PRIVATE raylib sb::logger m pthread dl rt X11)

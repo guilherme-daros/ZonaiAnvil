@@ -12,6 +12,12 @@ constexpr int kTransitionDelayMs = 500;
 constexpr int kTransitionDelayMs = 0;
 #endif
 
+struct DeviceLog {
+  uint8_t level;
+  std::string message;
+  double timestamp;
+};
+
 struct AppUIContext {
   // Selection state
   int currentPort = 0;
@@ -33,6 +39,7 @@ struct AppUIContext {
 
   // Dynamic Device Config
   std::vector<DeviceParameter> config;
+  std::vector<DeviceLog> deviceLogs;
   std::string connectedDeviceName = "";
 
   // Internal Timers/Flags
@@ -40,6 +47,7 @@ struct AppUIContext {
   double welcomeTimer = 0.0;
   bool pendingSchemaResponse = false;
   Vector2 configScroll = {0, 0};
+  Vector2 logScroll = {0, 0};
 
   bool anyDropdownOpen() const { return portDropdownEdit || baudDropdownEdit || themeDropdownEdit; }
 };

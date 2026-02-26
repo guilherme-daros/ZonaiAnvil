@@ -26,6 +26,7 @@ class ProtocolHandler {
   std::function<void(const std::vector<DeviceParameter>&)> onSchemaReceived;
   std::function<void(const std::vector<std::pair<uint8_t, float>>&)> onValuesReceived;
   std::function<void(uint8_t)> onWriteAck;
+  std::function<void(uint8_t level, const std::string& msg)> onLogReceived;
 
   // Callbacks for Slave Role (Simulator/Device)
   std::function<void(Protocol::Command, const std::vector<uint8_t>&)> onCommandReceived;

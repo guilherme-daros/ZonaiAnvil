@@ -13,7 +13,8 @@ enum class Command : uint8_t {
   kReadValue = 0x20,
   kReadAll = 0x21,
   kWriteValue = 0x30,
-  kWriteAll = 0x31
+  kWriteAll = 0x31,
+  kLog = 0x40
 };
 
 enum class ParamType : uint8_t { kToggle = 0x01, kSlider = 0x02, kNumeric = 0x03, kString = 0x04 };

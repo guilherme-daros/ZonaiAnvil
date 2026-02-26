@@ -96,12 +96,18 @@ void UpdateStateLogic(AppUIContext& ctx, boost::sml::sm<AppStateController>& sm,
         if (p.id == id) p.pending = false;
       }
     };
+    protocol->onLogReceived = [&](uint8_t level, const std::string& msg) {
+      ctx.deviceLogs.push_back({level, msg, GetTime()});
+      if (ctx.deviceLogs.size() > 100) ctx.deviceLogs.erase(ctx.deviceLogs.begin());
+      ctx.logScroll.y = -1000000;  // Auto-scroll
+    };
     protocol->requestSchema();
   }
 
   if (sm.is("Disconnected"_s) && protocol) {
     protocol.reset();
     ctx.config.clear();
+    ctx.deviceLogs.clear();
   }
 }
 
@@ -237,12 +243,13 @@ void DrawConfigPanel(AppUIContext& ctx, boost::sml::sm<AppStateController>& sm, 
   float screenWidth = (float)GetScreenWidth();
   float screenHeight = (float)GetScreenHeight();
   float panelWidth = screenWidth - 220 - 10;
-  float panelHeight = screenHeight - 20;
+  float logPanelHeight = 150.0f;
+  float configPanelHeight = screenHeight - logPanelHeight - 30;
 
   const char* configTitle = ctx.connectedDeviceName.empty()
                                 ? "Configuration"
                                 : TextFormat("Configuration [%s]", ctx.connectedDeviceName.c_str());
-  GuiGroupBox((Rectangle){220, 10, panelWidth, panelHeight}, configTitle);
+  GuiGroupBox((Rectangle){220, 10, panelWidth, configPanelHeight}, configTitle);
 
   if (sm.is("Connected"_s)) {
     float availableWidth = panelWidth - 40;
@@ -254,7 +261,7 @@ void DrawConfigPanel(AppUIContext& ctx, boost::sml::sm<AppStateController>& sm, 
     int totalRows = ctx.config.empty() ? 0 : (int)((ctx.config.size() + itemsPerRow - 1) / itemsPerRow);
     float totalContentHeight = totalRows * itemHeight + 20;
 
-    Rectangle scrollBounds = {230, 40, panelWidth - 20, panelHeight - 100};
+    Rectangle scrollBounds = {230, 40, panelWidth - 20, configPanelHeight - 80};
     Rectangle contentBounds = {0, 0, panelWidth - 40, totalContentHeight};
     Rectangle view = {0, 0, 0, 0};
     GuiScrollPanel(scrollBounds, NULL, contentBounds, &ctx.configScroll, &view);
@@ -266,16 +273,14 @@ void DrawConfigPanel(AppUIContext& ctx, boost::sml::sm<AppStateController>& sm, 
       int row = (int)(i / itemsPerRow);
       int col = (int)(i % itemsPerRow);
 
-      float posX = col * itemWidth + 40;  // Increased padding from 10 to 40
+      float posX = col * itemWidth + 40;
       float posY = row * itemHeight + 10;
 
       float drawX = posX + ctx.configScroll.x + scrollBounds.x;
       float drawY = posY + ctx.configScroll.y + scrollBounds.y;
 
-      // Visibility check for performance (only draw what's in view)
       if (drawY + itemHeight > scrollBounds.y && drawY < scrollBounds.y + scrollBounds.height) {
         if (param.pending) GuiLock();
-
         if (param.type == Protocol::ParamType::kToggle) {
           bool val = (param.value > 0.5f);
           bool oldVal = val;
@@ -290,11 +295,9 @@ void DrawConfigPanel(AppUIContext& ctx, boost::sml::sm<AppStateController>& sm, 
         } else if (param.type == Protocol::ParamType::kSlider) {
           GuiLabel((Rectangle){drawX, drawY, 200, 20},
                    param.pending ? TextFormat("%s (sending...)", param.name.c_str()) : param.name.c_str());
-
-          Rectangle sliderRect = {drawX, drawY + 20, 180, 20};  // Slightly narrower to fit labels better
+          Rectangle sliderRect = {drawX, drawY + 20, 180, 20};
           GuiSlider(sliderRect, TextFormat("%.1f", param.min), TextFormat("%.1f", param.max), &param.value, param.min,
                     param.max);
-
           if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON) && (std::abs(param.value - param.lastSentValue) > 0.001f)) {
             param.pending = true;
             param.lastSentValue = param.value;
@@ -303,7 +306,6 @@ void DrawConfigPanel(AppUIContext& ctx, boost::sml::sm<AppStateController>& sm, 
         } else if (param.type == Protocol::ParamType::kNumeric) {
           GuiLabel((Rectangle){drawX, drawY, 200, 20},
                    param.pending ? TextFormat("%s (sending...)", param.name.c_str()) : param.name.c_str());
-
           int val = (int)param.value;
           if (GuiValueBox((Rectangle){drawX, drawY + 20, 100, 30}, NULL, &val, (int)param.min, (int)param.max,
                           param.editMode)) {
@@ -319,10 +321,8 @@ void DrawConfigPanel(AppUIContext& ctx, boost::sml::sm<AppStateController>& sm, 
         } else if (param.type == Protocol::ParamType::kString) {
           GuiLabel((Rectangle){drawX, drawY, 200, 20},
                    param.pending ? TextFormat("%s (sending...)", param.name.c_str()) : param.name.c_str());
-
           char buffer[128] = {0};
           std::strncpy(buffer, param.stringValue.c_str(), sizeof(buffer) - 1);
-
           if (GuiTextBox((Rectangle){drawX, drawY + 20, 200, 30}, buffer, 128, param.editMode)) {
             param.editMode = !param.editMode;
             if (!param.editMode && param.stringValue != buffer) {
@@ -332,15 +332,13 @@ void DrawConfigPanel(AppUIContext& ctx, boost::sml::sm<AppStateController>& sm, 
               if (protocol) protocol->writeString(param.id, param.stringValue);
             }
           }
-          if (param.editMode) {
-            param.stringValue = buffer;
-          }
+          if (param.editMode) param.stringValue = buffer;
         }
         if (param.pending) GuiUnlock();
       }
     }
     EndScissorMode();
-    if (GuiButton((Rectangle){270, screenHeight - 50, 150, 30}, "Refresh All")) {
+    if (GuiButton((Rectangle){230, configPanelHeight - 40, 120, 30}, "Refresh All")) {
       if (protocol) protocol->requestAllValues();
     }
   } else {
@@ -349,10 +347,38 @@ void DrawConfigPanel(AppUIContext& ctx, boost::sml::sm<AppStateController>& sm, 
       message = "Retrieving device configuration...";
     else if (sm.is("Connecting"_s))
       message = "Establishing connection...";
-
     int fontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
     float msgWidth = (float)MeasureText(message, fontSize);
-    GuiLabel((Rectangle){220 + panelWidth / 2 - msgWidth / 2, 10 + panelHeight / 2, msgWidth + 20, 20}, message);
+    GuiLabel((Rectangle){220 + panelWidth / 2 - msgWidth / 2, configPanelHeight / 2, msgWidth + 20, 20}, message);
   }
+
+  // Device Logs Panel
+  float logPanelY = configPanelHeight + 20;
+  GuiGroupBox((Rectangle){220, logPanelY, panelWidth, logPanelHeight}, "Device Logs");
+
+  float logContentHeight = ctx.deviceLogs.size() * 20.0f + 10.0f;
+  Rectangle logScrollBounds = {230, logPanelY + 20, panelWidth - 20, logPanelHeight - 30};
+  Rectangle logContentBounds = {0, 0, panelWidth - 40, logContentHeight};
+  Rectangle logView = {0, 0, 0, 0};
+
+  GuiScrollPanel(logScrollBounds, NULL, logContentBounds, &ctx.logScroll, &logView);
+
+  BeginScissorMode((int)logView.x, (int)logView.y, (int)logView.width, (int)logView.height);
+  for (size_t i = 0; i < ctx.deviceLogs.size(); ++i) {
+    auto& log = ctx.deviceLogs[i];
+    float drawY = logPanelY + 25 + i * 20 + ctx.logScroll.y;
+
+    if (drawY + 20 > logScrollBounds.y && drawY < logScrollBounds.y + logScrollBounds.height) {
+      Color color = GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL));
+      if (log.level == 1)
+        color = YELLOW;
+      else if (log.level >= 2)
+        color = RED;
+
+      DrawText(TextFormat("[%.2f] %s", log.timestamp, log.message.c_str()), (int)logScrollBounds.x + 5, (int)drawY, 10,
+               color);
+    }
+  }
+  EndScissorMode();
 }
 }  // namespace UIManager

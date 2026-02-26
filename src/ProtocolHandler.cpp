@@ -1,6 +1,6 @@
 #include "ProtocolHandler.hpp"
+#include "Log.hpp"
 #include <cstring>
-#include <iostream>
 
 ProtocolHandler::ProtocolHandler(ICommunication* comm) : comm(comm) {}
 
@@ -55,7 +55,7 @@ void ProtocolHandler::update() {
     if (receivedChecksum == Protocol::CalculateChecksum(payload)) {
       processPacket(*header, payload);
     } else {
-      std::cerr << "[Protocol] Checksum mismatch for command 0x" << std::hex << (int)header->command << std::endl;
+      Log::Protocol::Error() << "Checksum mismatch for command 0x" << std::hex << (int)header->command;
     }
 
     rxBuffer.erase(rxBuffer.begin(), rxBuffer.begin() + totalSize);
@@ -141,7 +141,15 @@ void ProtocolHandler::processPacket(const Protocol::PacketHeader& header, const 
       break;
     }
     case Protocol::Command::kPing:
-      std::cout << "[Protocol] Ping/Ack received." << std::endl;
+      Log::Protocol::Info() << "Ping/Ack received.";
       break;
+    case Protocol::Command::kLog: {
+      if (payload.size() >= 1) {
+        uint8_t level = payload[0];
+        std::string msg(reinterpret_cast<const char*>(&payload[1]), payload.size() - 1);
+        if (onLogReceived) onLogReceived(level, msg);
+      }
+      break;
+    }
   }
 }
