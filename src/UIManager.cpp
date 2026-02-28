@@ -1,4 +1,5 @@
 #include "UIManager.hpp"
+#include "Log.hpp"
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
@@ -22,27 +23,32 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
-#include "styles/style_cyber.h"
-#include "styles/style_dark.h"
-#include "styles/style_terminal.h"
+#include "styles/style_frappe.h"
+#include "styles/style_latte.h"
+#include "styles/style_macchiato.h"
+#include "styles/style_mocha.h"
 #include "styles/style_termx.h"
 
 namespace UIManager {
 
 void ApplyTheme(int index) {
+  Log::App::Debug() << "Applying theme index: " << index;
   GuiLoadStyleDefault();
   switch (index) {
     case 0:
       GuiLoadStyleTermX();
       break;
     case 1:
-      GuiLoadStyleCyber();
+      GuiLoadStyleMocha();
       break;
     case 2:
-      GuiLoadStyleDark();
+      GuiLoadStyleMacchiato();
       break;
     case 3:
-      GuiLoadStyleTerminal();
+      GuiLoadStyleFrappe();
+      break;
+    case 4:
+      GuiLoadStyleLatte();
       break;
     default:
       GuiLoadStyleTermX();
@@ -50,8 +56,8 @@ void ApplyTheme(int index) {
   }
 }
 
-void UpdateStateLogic(AppUIContext& ctx, boost::sml::sm<AppStateController>& sm,
-                      std::unique_ptr<ProtocolHandler>& protocol, ICommunication* activeComm) {
+void UpdateStateLogic(AppUIContext& ctx, AppSM& sm, std::unique_ptr<ProtocolHandler>& protocol,
+                      ICommunication* activeComm) {
   using namespace boost::sml::literals;
 
   if (sm.is("Welcome"_s)) {
@@ -148,8 +154,8 @@ void DrawWelcomeScreen(AppUIContext& ctx) {
            GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL)));
 }
 
-void DrawSidebar(AppUIContext& ctx, boost::sml::sm<AppStateController>& sm, ProtocolHandler* protocol,
-                 ICommunication* realComm, ICommunication* mockComm, ICommunication*& activeComm) {
+void DrawSidebar(AppUIContext& ctx, AppSM& sm, ProtocolHandler* protocol, ICommunication* realComm,
+                 ICommunication* mockComm, ICommunication*& activeComm) {
   using namespace boost::sml::literals;
 
   float screenHeight = (float)GetScreenHeight();
@@ -237,7 +243,7 @@ void DrawSidebar(AppUIContext& ctx, boost::sml::sm<AppStateController>& sm, Prot
   GuiUnlock();
 }
 
-void DrawConfigPanel(AppUIContext& ctx, boost::sml::sm<AppStateController>& sm, ProtocolHandler* protocol) {
+void DrawConfigPanel(AppUIContext& ctx, AppSM& sm, ProtocolHandler* protocol) {
   using namespace boost::sml::literals;
 
   float screenWidth = (float)GetScreenWidth();

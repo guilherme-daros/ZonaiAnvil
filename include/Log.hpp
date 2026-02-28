@@ -5,6 +5,6 @@
 namespace Log {
 using Protocol = sb::logger::Logger<"Protocol">;
 using App = sb::logger::Logger<"App">;
-using SM = sb::logger::Logger<"SM">;
-using Mock = sb::logger::Logger<"Mock">;
-} // namespace Log
+using StateMachine = sb::logger::Logger<"StateMachine">;
+using SerialMock = sb::logger::Logger<"Mock">;
+}  // namespace Log

@@ -2,9 +2,9 @@
 #include <algorithm>
 #include <chrono>
 #include <cstring>
-#include "Log.hpp"
 #include <vector>
 #include "ICommunication.hpp"
+#include "Log.hpp"
 #include "Protocol.hpp"
 
 struct MockParam {
@@ -51,7 +51,7 @@ class MockSerialPort : public ICommunication {
                   {27, static_cast<uint8_t>(Protocol::ParamType::kString), "Str 2", 0.0f, 0.0f, 0.0f, "World"}};
       }
 
-      Log::Mock::Info() << "Connected to " << port << " with " << params.size() << " parameters.";
+      Log::SerialMock::Info() << "Connected to " << port << " with " << params.size() << " parameters.";
       return true;
     }
     return false;
@@ -59,7 +59,7 @@ class MockSerialPort : public ICommunication {
 
   void close() override {
     if (isOpenFlag) {
-      Log::Mock::Info() << "Disconnected from " << activePortName << ".";
+      Log::SerialMock::Info() << "Disconnected from " << activePortName << ".";
       isOpenFlag = false;
       delayedResponses.clear();
     }
@@ -122,15 +122,15 @@ class MockSerialPort : public ICommunication {
                 uint8_t strLen = data[sizeof(Protocol::PacketHeader) + 1];
                 p.stringValue =
                     std::string(reinterpret_cast<const char*>(&data[sizeof(Protocol::PacketHeader) + 2]), strLen);
-                Log::Mock::Info() << "[" << activePortName << "] Param " << (int)id << " updated to \""
-                                  << p.stringValue << "\" (ACK in 500ms)";
+                Log::SerialMock::Info() << "[" << activePortName << "] Param " << (int)id << " updated to \""
+                                        << p.stringValue << "\" (ACK in 500ms)";
                 queueLog(0, "String parameter updated: " + p.stringValue);
               } else {
                 float newVal;
                 std::memcpy(&newVal, &data[sizeof(Protocol::PacketHeader) + 1], 4);
                 p.value = newVal;
-                Log::Mock::Info() << "[" << activePortName << "] Param " << (int)id << " updated to " << newVal
-                                  << " (ACK in 500ms)";
+                Log::SerialMock::Info() << "[" << activePortName << "] Param " << (int)id << " updated to " << newVal
+                                        << " (ACK in 500ms)";
                 queueLog(0, "Value updated: " + std::to_string(newVal));
                 if (newVal > 90.0f) queueLog(1, "Warning: Value is high!");
               }

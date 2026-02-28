@@ -1,9 +1,36 @@
 #pragma once
-#include "Log.hpp"
 #include <string>
+#include "Log.hpp"
 #include "sml.hpp"
 
 namespace sml = boost::sml;
+
+struct SmlLogger {
+  template <class SM, class TEvent>
+  void log_process_event(const TEvent&) {
+    Log::StateMachine::Debug() << "[" << sml::aux::get_type_name<SM>()
+                               << "] process_event: " << sml::aux::get_type_name<TEvent>();
+  }
+
+  template <class SM, class TGuard, class TEvent>
+  void log_guard(const TGuard&, const TEvent&, bool result) {
+    Log::StateMachine::Debug() << "[" << sml::aux::get_type_name<SM>()
+                               << "] guard: " << sml::aux::get_type_name<TGuard>() << " "
+                               << (result ? "[OK]" : "[Reject]");
+  }
+
+  template <class SM, class TAction, class TEvent>
+  void log_action(const TAction&, const TEvent&) {
+    Log::StateMachine::Debug() << "[" << sml::aux::get_type_name<SM>()
+                               << "] action: " << sml::aux::get_type_name<TAction>();
+  }
+
+  template <class SM, class TSrcState, class TDstState>
+  void log_state_change(const TSrcState& src, const TDstState& dst) {
+    Log::StateMachine::Debug() << "[" << sml::aux::get_type_name<SM>() << "] transition: " << src.c_str() << " -> "
+                               << dst.c_str();
+  }
+};
 
 // Events
 struct ConnectEvent {
@@ -20,16 +47,16 @@ struct WelcomeTimerEvent {};
 struct OpenConnection {
   template <class TEvent>
   void operator()(const TEvent& event) {
-    Log::SM::Info() << "Opening connection to " << event.port;
+    Log::StateMachine::Info() << "Opening connection to " << event.port;
   }
 };
 
 struct RequestSchema {
-  void operator()() { Log::SM::Info() << "Requesting Schema from device..."; }
+  void operator()() { Log::StateMachine::Info() << "Requesting Schema from device..."; }
 };
 
 struct CloseConnection {
-  void operator()() { Log::SM::Info() << "Closing connection"; }
+  void operator()() { Log::StateMachine::Info() << "Closing connection"; }
 };
 
 // State Machine Definition
@@ -59,3 +86,5 @@ struct AppStateController {
                                  "Connected"_s + event<ConnectionFailedEvent> = "Disconnected"_s);
   }
 };
+
+using AppSM = boost::sml::sm<AppStateController, boost::sml::logger<SmlLogger>>;

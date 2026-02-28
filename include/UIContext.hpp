@@ -34,8 +34,8 @@ struct AppUIContext {
   char portList[2048] = {0};
   std::vector<std::string> portPaths;
   const char* baudRates = "9600;19200;38400;57600;115200";
-  const char* themes = "TermX;Cyber;Dark;Terminal";
-  int themeCount = 4;
+  const char* themes = "TermX;Mocha;Macchiato;Frappe;Latte";
+  int themeCount = 5;
 
   // Dynamic Device Config
   std::vector<DeviceParameter> config;

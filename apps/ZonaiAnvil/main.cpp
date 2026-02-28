@@ -18,6 +18,12 @@ int main() {
   using namespace boost::sml::literals;
   const int screenWidth = 800;
   const int screenHeight = 600;
+
+  Log::StateMachine::logging_level = sb::logger::Level::Debug;
+  Log::App::logging_level = sb::logger::Level::Debug;
+
+  Log::App::Info() << "Starting ZonaiAnvil Application";
+  SetTraceLogLevel(LOG_NONE);
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   InitWindow(screenWidth, screenHeight, "ZonaiAnvil");
   SetTargetFPS(60);
@@ -46,7 +52,8 @@ int main() {
     if (i < ctx.portPaths.size() - 1) strcat(ctx.portList, ";");
   }
 
-  boost::sml::sm<AppStateController> sm;
+  SmlLogger smlLogger;
+  AppSM sm{smlLogger};
 
   while (!WindowShouldClose()) {
     // Handle Resizing of Render Texture
@@ -92,6 +99,8 @@ int main() {
     }
     EndDrawing();
   }
+
+  Log::App::Info() << "Closing ZonaiAnvil Application";
 
   UnloadShader(crtShader);
   UnloadRenderTexture(target);
