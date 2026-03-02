@@ -1,5 +1,4 @@
 #include "UIManager.hpp"
-#include "Log.hpp"
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
@@ -8,6 +7,7 @@
 #include <thread>
 #include "DeviceParameter.hpp"
 #include "ICommunication.hpp"
+#include "Log.hpp"
 #include "ProtocolHandler.hpp"
 
 #include "raylib.h"

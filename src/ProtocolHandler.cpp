@@ -1,6 +1,6 @@
 #include "ProtocolHandler.hpp"
-#include "Log.hpp"
 #include <cstring>
+#include "Log.hpp"
 
 ProtocolHandler::ProtocolHandler(ICommunication* comm) : comm(comm) {}
 
