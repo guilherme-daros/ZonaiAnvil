@@ -74,16 +74,5 @@ else
     echo "  - raygui.h already exists, skipping."
 fi
 
-# Styles
-echo "  - Fetching official styles..."
-mkdir -p third_party/styles
-STYLES=("cyber" "dark" "terminal" "bluish" "lavanda" "sunny" "cherry" "ashes")
-for style in "${STYLES[@]}"; do
-    if [ ! -f "third_party/styles/style_$style.h" ]; then
-        echo "    * Downloading style_$style.h"
-        curl -sL "https://raw.githubusercontent.com/raysan5/raygui/master/styles/$style/style_$style.h" -o "third_party/styles/style_$style.h"
-    fi
-done
-
 echo "--- Setup Complete! ---"
 echo "You can now build the project using: ./scripts/build.sh"

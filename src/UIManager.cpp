@@ -9,6 +9,8 @@
 #include "ICommunication.hpp"
 #include "Log.hpp"
 #include "ProtocolHandler.hpp"
+#include "ThemeManager.hpp"
+#include "FontManager.hpp"
 
 #include "raylib.h"
 
@@ -20,231 +22,211 @@
 #define TextToInteger(text) atoi(text)
 #endif
 
+// Define raygui implementation in ONE translation unit
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
-
-#include "styles/style_frappe.h"
-#include "styles/style_latte.h"
-#include "styles/style_macchiato.h"
-#include "styles/style_mocha.h"
-#include "styles/style_termx.h"
 
 namespace UIManager {
 
 void ApplyTheme(int index) {
-  Log::App::Debug() << "Applying theme index: " << index;
-  GuiLoadStyleDefault();
-  switch (index) {
-    case 0:
-      GuiLoadStyleTermX();
-      break;
-    case 1:
-      GuiLoadStyleMocha();
-      break;
-    case 2:
-      GuiLoadStyleMacchiato();
-      break;
-    case 3:
-      GuiLoadStyleFrappe();
-      break;
-    case 4:
-      GuiLoadStyleLatte();
-      break;
-    default:
-      GuiLoadStyleTermX();
-      break;
-  }
+  ThemeManager::ThemeType type = static_cast<ThemeManager::ThemeType>(index);
+  const ThemeManager::Theme& t = ThemeManager::getTheme(type);
+  
+  Log::App::Debug() << "Applying theme: " << t.name;
+
+  GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL,   ColorToInt(t.borderNormal));
+  GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL,     ColorToInt(t.baseNormal));
+  GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL,     ColorToInt(t.textNormal));
+  
+  GuiSetStyle(DEFAULT, BORDER_COLOR_FOCUSED,  ColorToInt(t.borderFocused));
+  GuiSetStyle(DEFAULT, BASE_COLOR_FOCUSED,    ColorToInt(t.baseFocused));
+  GuiSetStyle(DEFAULT, TEXT_COLOR_FOCUSED,    ColorToInt(t.textFocused));
+  
+  GuiSetStyle(DEFAULT, BORDER_COLOR_PRESSED,  ColorToInt(t.borderPressed));
+  GuiSetStyle(DEFAULT, BASE_COLOR_PRESSED,    ColorToInt(t.basePressed));
+  GuiSetStyle(DEFAULT, TEXT_COLOR_PRESSED,    ColorToInt(t.textPressed));
+  
+  GuiSetStyle(DEFAULT, BORDER_COLOR_DISABLED, ColorToInt(t.borderDisabled));
+  GuiSetStyle(DEFAULT, BASE_COLOR_DISABLED,   ColorToInt(t.baseDisabled));
+  GuiSetStyle(DEFAULT, TEXT_COLOR_DISABLED,   ColorToInt(t.textDisabled));
+  
+  GuiSetStyle(DEFAULT, BACKGROUND_COLOR,      ColorToInt(t.background));
+  GuiSetStyle(DEFAULT, LINE_COLOR,            ColorToInt(t.line));
+  
+  GuiSetStyle(DEFAULT, TEXT_SIZE, 18);
+  GuiSetStyle(DEFAULT, TEXT_SPACING, 1);
 }
 
-void UpdateStateLogic(AppUIContext& ctx, AppSM& sm, std::unique_ptr<ProtocolHandler>& protocol,
-                      ICommunication* activeComm) {
+void ApplyFont(Font font, int fontSize) {
+  if (font.texture.id == 0) return;
+  GuiSetFont(font);
+  GuiSetStyle(DEFAULT, TEXT_SIZE, fontSize);
+}
+
+void UpdateStateLogic(AppUIContext& ctx, AppSM& sm) {
   using namespace boost::sml::literals;
 
   if (sm.is("Welcome"_s)) {
     if (ctx.welcomeTimer == 0.0) ctx.welcomeTimer = GetTime();
-    if (GetKeyPressed() != 0 || (GetTime() - ctx.welcomeTimer > 5.0)) {  // 5 seconds max or any key
+    if (GetKeyPressed() != 0 || (GetTime() - ctx.welcomeTimer > 5.0)) {
       sm.process_event(WelcomeTimerEvent{});
     }
     return;
   }
 
-  // 1. Logic & State Transitions
   if (ctx.pendingSchemaResponse && (GetTime() - ctx.stateTransitionTime) > (kTransitionDelayMs / 1000.0)) {
     sm.process_event(SchemaReceivedEvent{});
     ctx.pendingSchemaResponse = false;
   }
-
-  // Handle Protocol Creation/Reset on State Change
-  if (sm.is("FetchingSchema"_s) && !protocol && activeComm && activeComm->isOpen()) {
-    protocol = std::make_unique<ProtocolHandler>(activeComm);
-    protocol->onSchemaReceived = [&](const std::vector<DeviceParameter>& s) {
-      ctx.config = s;
-      for (auto& p : ctx.config) {
-        p.lastSentValue = p.value;
-        p.lastSentString = p.stringValue;
-      }
-      protocol->requestAllValues();
-      ctx.stateTransitionTime = GetTime();
-      ctx.pendingSchemaResponse = true;
-    };
-    protocol->onValuesReceived = [&](const std::vector<std::pair<uint8_t, float>>& v) {
-      for (auto& val : v) {
-        for (auto& p : ctx.config) {
-          if (p.id == val.first) {
-            p.value = val.second;
-            p.lastSentValue = val.second;
-          }
-        }
-      }
-    };
-    protocol->onWriteAck = [&](uint8_t id) {
-      for (auto& p : ctx.config) {
-        if (p.id == id) p.pending = false;
-      }
-    };
-    protocol->onLogReceived = [&](uint8_t level, const std::string& msg) {
-      ctx.deviceLogs.push_back({level, msg, GetTime()});
-      if (ctx.deviceLogs.size() > 100) ctx.deviceLogs.erase(ctx.deviceLogs.begin());
-      ctx.logScroll.y = -1000000;  // Auto-scroll
-    };
-    protocol->requestSchema();
-  }
-
-  if (sm.is("Disconnected"_s) && protocol) {
-    protocol.reset();
-    ctx.config.clear();
-    ctx.deviceLogs.clear();
-  }
 }
 
 void HandleInput(AppUIContext& ctx) {
-  if (ctx.portDropdownEdit) {
-    if (IsKeyPressed(KEY_DOWN)) ctx.currentPort = (ctx.currentPort + 1) % (int)ctx.portPaths.size();
+  auto& conn = ctx.connection;
+  auto& visual = ctx.visual;
+
+  if (conn.portDropdownEdit) {
+    if (IsKeyPressed(KEY_DOWN)) conn.currentPort = (conn.currentPort + 1) % (int)conn.portPaths.size();
     if (IsKeyPressed(KEY_UP))
-      ctx.currentPort = (ctx.currentPort - 1 + (int)ctx.portPaths.size()) % (int)ctx.portPaths.size();
-    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) ctx.portDropdownEdit = false;
-  } else if (ctx.baudDropdownEdit) {
-    if (IsKeyPressed(KEY_DOWN)) ctx.baudRateIndex = (ctx.baudRateIndex + 1) % 5;
-    if (IsKeyPressed(KEY_UP)) ctx.baudRateIndex = (ctx.baudRateIndex - 1 + 5) % 5;
-    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) ctx.baudDropdownEdit = false;
-  } else if (ctx.themeDropdownEdit) {
+      conn.currentPort = (conn.currentPort - 1 + (int)conn.portPaths.size()) % (int)conn.portPaths.size();
+    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) conn.portDropdownEdit = false;
+  } else if (conn.baudDropdownEdit) {
+    if (IsKeyPressed(KEY_DOWN)) conn.baudRateIndex = (conn.baudRateIndex + 1) % 5;
+    if (IsKeyPressed(KEY_UP)) conn.baudRateIndex = (conn.baudRateIndex - 1 + 5) % 5;
+    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) conn.baudDropdownEdit = false;
+  } else if (visual.themeDropdownEdit) {
     if (IsKeyPressed(KEY_DOWN)) {
-      ctx.themeIndex = (ctx.themeIndex + 1) % ctx.themeCount;
-      ApplyTheme(ctx.themeIndex);
+      visual.themeIndex = (visual.themeIndex + 1) % visual.themeCount;
+      ApplyTheme(visual.themeIndex);
     }
     if (IsKeyPressed(KEY_UP)) {
-      ctx.themeIndex = (ctx.themeIndex - 1 + ctx.themeCount) % ctx.themeCount;
-      ApplyTheme(ctx.themeIndex);
+      visual.themeIndex = (visual.themeIndex - 1 + visual.themeCount) % visual.themeCount;
+      ApplyTheme(visual.themeIndex);
     }
-    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) ctx.themeDropdownEdit = false;
+    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) visual.themeDropdownEdit = false;
+  } else if (visual.shaderDropdownEdit) {
+    if (IsKeyPressed(KEY_DOWN)) visual.currentShader = (visual.currentShader + 1) % visual.shaderCount;
+    if (IsKeyPressed(KEY_UP)) visual.currentShader = (visual.currentShader - 1 + visual.shaderCount) % visual.shaderCount;
+    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) visual.shaderDropdownEdit = false;
+  } else if (visual.fontDropdownEdit) {
+    if (IsKeyPressed(KEY_DOWN)) visual.currentFont = (visual.currentFont + 1) % visual.fontCount;
+    if (IsKeyPressed(KEY_UP)) visual.currentFont = (visual.currentFont - 1 + visual.fontCount) % visual.fontCount;
+    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) visual.fontDropdownEdit = false;
   }
 }
 
-void DrawWelcomeScreen(AppUIContext& ctx) {
+static void DrawWelcomeScreen(AppUIContext& ctx) {
   const char* title = "ZonaiAnvil";
-  int fontSize = 60;
-  int textWidth = MeasureText(title, fontSize);
-  DrawText(title, GetScreenWidth() / 2 - textWidth / 2, GetScreenHeight() / 2 - fontSize / 2 - 20, fontSize,
-           GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL)));
+  float fontSize = 60.0f;
+  float spacing = 2.0f;
+  Font font = GuiGetFont();
+  Vector2 textWidth = MeasureTextEx(font, title, fontSize, spacing);
+  
+  DrawTextEx(font, title, 
+             (Vector2){(float)GetScreenWidth() / 2 - textWidth.x / 2, (float)GetScreenHeight() / 2 - fontSize / 2 - 20}, 
+             fontSize, spacing, GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL)));
 
   const char* subTitle = "Press any key to continue";
-  int subFontSize = 20;
-  int subTextWidth = MeasureText(subTitle, subFontSize);
-  DrawText(subTitle, GetScreenWidth() / 2 - subTextWidth / 2, GetScreenHeight() / 2 + fontSize / 2 + 10, subFontSize,
-           GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL)));
+  float subFontSize = 20.0f;
+  Vector2 subTextWidth = MeasureTextEx(font, subTitle, subFontSize, spacing);
+  
+  DrawTextEx(font, subTitle, 
+             (Vector2){(float)GetScreenWidth() / 2 - subTextWidth.x / 2, (float)GetScreenHeight() / 2 + fontSize / 2 + 10}, 
+             subFontSize, spacing, GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL)));
 }
 
-void DrawSidebar(AppUIContext& ctx, AppSM& sm, ProtocolHandler* protocol, ICommunication* realComm,
-                 ICommunication* mockComm, ICommunication*& activeComm) {
+static void DrawSidebar(AppUIContext& ctx, AppSM& sm, CommunicationManager::Manager& comms) {
   using namespace boost::sml::literals;
+  auto& conn = ctx.connection;
+  auto& visual = ctx.visual;
+  auto& fontMgr = FontManager::Manager::instance();
 
   float screenHeight = (float)GetScreenHeight();
-  GuiGroupBox((Rectangle){10, 10, 200, screenHeight - 20}, "Connection");
+  GuiGroupBox((Rectangle){10, 10, 200, screenHeight - 20}, "Settings");
 
+  // 1. Static Button (Connect/Disconnect)
   if (sm.is("Disconnected"_s)) {
     if (GuiButton((Rectangle){20, 210, 180, 40}, "Connect")) {
-      if (ctx.currentPort < (int)ctx.portPaths.size()) {
-        std::string selectedPort = ctx.portPaths[ctx.currentPort];
+      if (conn.currentPort < (int)conn.portPaths.size()) {
+        std::string selectedPort = conn.portPaths[conn.currentPort];
         int baud = 9600;
-        switch (ctx.baudRateIndex) {
-          case 1:
-            baud = 19200;
-            break;
-          case 2:
-            baud = 38400;
-            break;
-          case 3:
-            baud = 57600;
-            break;
-          case 4:
-            baud = 115200;
-            break;
+        switch (conn.baudRateIndex) {
+          case 1: baud = 19200; break;
+          case 2: baud = 38400; break;
+          case 3: baud = 57600; break;
+          case 4: baud = 115200; break;
         }
-
-        if (selectedPort.find("ttyMock") != std::string::npos)
-          activeComm = mockComm;
-        else
-          activeComm = realComm;
-
-        if (activeComm && activeComm->open(selectedPort, baud)) {
-          ctx.connectedDeviceName = selectedPort;
-          sm.process_event(ConnectEvent{selectedPort, baud});
-          if (kTransitionDelayMs > 0) std::this_thread::sleep_for(std::chrono::milliseconds(kTransitionDelayMs));
-          sm.process_event(ConnectionSuccessEvent{});
-        }
+        comms.connect(selectedPort, baud);
       }
     }
   } else {
     if (GuiButton((Rectangle){20, 210, 180, 40}, "Disconnect")) {
-      if (activeComm) activeComm->close();
-      ctx.connectedDeviceName = "";
-      sm.process_event(DisconnectEvent{});
+      comms.disconnect();
+      ctx.device.config.clear();
+      ctx.device.deviceLogs.clear();
     }
   }
 
   const char* statusStr = "STATUS: Disconnected";
-  if (sm.is("Connecting"_s))
-    statusStr = "STATUS: Connecting...";
-  else if (sm.is("FetchingSchema"_s))
-    statusStr = "STATUS: Syncing...";
-  else if (sm.is("Connected"_s))
-    statusStr = "STATUS: Connected";
+  if (sm.is("Connecting"_s)) statusStr = "STATUS: Connecting...";
+  else if (sm.is("FetchingSchema"_s)) statusStr = "STATUS: Syncing...";
+  else if (sm.is("Connected"_s)) statusStr = "STATUS: Connected";
   GuiLabel((Rectangle){20, 255, 180, 20}, statusStr);
 
-  // 2. Buttons & Labels (Fixed positions)
-  if (ctx.anyDropdownOpen()) GuiLock();
-  if (GuiButton((Rectangle){20, 370, 180, 30}, ctx.crtEnabled ? "CRT Effect: ON" : "CRT Effect: OFF")) {
-    ctx.crtEnabled = !ctx.crtEnabled;
+  // --- Dropdowns drawn BOTTOM-TO-TOP for correct layering ---
+
+  // 1. Font (Bottom-most Y=440)
+  if (ctx.anyDropdownOpen() && !visual.fontDropdownEdit) GuiLock();
+  GuiLabel((Rectangle){20, 420, 180, 20}, "UI Font:");
+  int pf = visual.currentFont;
+  if (GuiDropdownBox((Rectangle){20, 440, 180, 30}, visual.fonts, &visual.currentFont, visual.fontDropdownEdit)) {
+    visual.fontDropdownEdit = !visual.fontDropdownEdit;
+  }
+  if (visual.currentFont != pf) {
+      ApplyFont(fontMgr.getFont(static_cast<FontManager::FontType>(visual.currentFont)), 18);
   }
   GuiUnlock();
 
-  // 3. Dropdowns (Drawn last to appear on top)
-  if (ctx.portDropdownEdit || ctx.baudDropdownEdit) GuiLock();
+  // 2. Shader (Y=380)
+  if (ctx.anyDropdownOpen() && !visual.shaderDropdownEdit) GuiLock();
+  GuiLabel((Rectangle){20, 360, 180, 20}, "Shader Effect:");
+  if (GuiDropdownBox((Rectangle){20, 380, 180, 30}, visual.shaders, &visual.currentShader, visual.shaderDropdownEdit)) {
+    visual.shaderDropdownEdit = !visual.shaderDropdownEdit;
+  }
+  GuiUnlock();
+
+  // 3. Theme (Y=310)
+  if (ctx.anyDropdownOpen() && !visual.themeDropdownEdit) GuiLock();
   GuiLabel((Rectangle){20, 290, 180, 20}, "UI Theme:");
-  int pt = ctx.themeIndex;
-  if (GuiDropdownBox((Rectangle){20, 310, 180, 30}, ctx.themes, &ctx.themeIndex, ctx.themeDropdownEdit)) {
-    ctx.themeDropdownEdit = !ctx.themeDropdownEdit;
+  int pt = visual.themeIndex;
+  if (GuiDropdownBox((Rectangle){20, 310, 180, 30}, visual.themes, &visual.themeIndex, visual.themeDropdownEdit)) {
+    visual.themeDropdownEdit = !visual.themeDropdownEdit;
   }
-  if (ctx.themeIndex != pt) ApplyTheme(ctx.themeIndex);
+  if (visual.themeIndex != pt) {
+      ApplyTheme(visual.themeIndex);
+      ApplyFont(fontMgr.getFont(static_cast<FontManager::FontType>(visual.currentFont)), 18);
+  }
   GuiUnlock();
 
-  if (ctx.portDropdownEdit || ctx.themeDropdownEdit) GuiLock();
+  // 4. Baud Rate (Y=110)
+  if (ctx.anyDropdownOpen() && !conn.baudDropdownEdit) GuiLock();
   GuiLabel((Rectangle){20, 90, 180, 20}, "Baud Rate:");
-  if (GuiDropdownBox((Rectangle){20, 110, 180, 30}, ctx.baudRates, &ctx.baudRateIndex, ctx.baudDropdownEdit)) {
-    ctx.baudDropdownEdit = !ctx.baudDropdownEdit;
+  if (GuiDropdownBox((Rectangle){20, 110, 180, 30}, conn.baudRates, &conn.baudRateIndex, conn.baudDropdownEdit)) {
+    conn.baudDropdownEdit = !conn.baudDropdownEdit;
   }
   GuiUnlock();
 
-  if (ctx.baudDropdownEdit || ctx.themeDropdownEdit) GuiLock();
+  // 5. Serial Port (Top-most Y=50)
+  if (ctx.anyDropdownOpen() && !conn.portDropdownEdit) GuiLock();
   GuiLabel((Rectangle){20, 30, 180, 20}, "Serial Port:");
-  if (GuiDropdownBox((Rectangle){20, 50, 180, 30}, ctx.portList, &ctx.currentPort, ctx.portDropdownEdit)) {
-    ctx.portDropdownEdit = !ctx.portDropdownEdit;
+  if (GuiDropdownBox((Rectangle){20, 50, 180, 30}, conn.portList, &conn.currentPort, conn.portDropdownEdit)) {
+    conn.portDropdownEdit = !conn.portDropdownEdit;
   }
   GuiUnlock();
 }
 
-void DrawConfigPanel(AppUIContext& ctx, AppSM& sm, ProtocolHandler* protocol) {
+static void DrawConfigPanel(AppUIContext& ctx, AppSM& sm, ProtocolHandler* protocol) {
   using namespace boost::sml::literals;
+  auto& device = ctx.device;
 
   float screenWidth = (float)GetScreenWidth();
   float screenHeight = (float)GetScreenHeight();
@@ -252,9 +234,9 @@ void DrawConfigPanel(AppUIContext& ctx, AppSM& sm, ProtocolHandler* protocol) {
   float logPanelHeight = 150.0f;
   float configPanelHeight = screenHeight - logPanelHeight - 30;
 
-  const char* configTitle = ctx.connectedDeviceName.empty()
+  const char* configTitle = device.connectedDeviceName.empty()
                                 ? "Configuration"
-                                : TextFormat("Configuration [%s]", ctx.connectedDeviceName.c_str());
+                                : TextFormat("Configuration [%s]", device.connectedDeviceName.c_str());
   GuiGroupBox((Rectangle){220, 10, panelWidth, configPanelHeight}, configTitle);
 
   if (sm.is("Connected"_s)) {
@@ -264,26 +246,26 @@ void DrawConfigPanel(AppUIContext& ctx, AppSM& sm, ProtocolHandler* protocol) {
     int itemsPerRow = (int)(availableWidth / itemWidth);
     if (itemsPerRow < 1) itemsPerRow = 1;
 
-    int totalRows = ctx.config.empty() ? 0 : (int)((ctx.config.size() + itemsPerRow - 1) / itemsPerRow);
+    int totalRows = device.config.empty() ? 0 : (int)((device.config.size() + itemsPerRow - 1) / itemsPerRow);
     float totalContentHeight = totalRows * itemHeight + 20;
 
     Rectangle scrollBounds = {230, 40, panelWidth - 20, configPanelHeight - 80};
     Rectangle contentBounds = {0, 0, panelWidth - 40, totalContentHeight};
     Rectangle view = {0, 0, 0, 0};
-    GuiScrollPanel(scrollBounds, NULL, contentBounds, &ctx.configScroll, &view);
+    GuiScrollPanel(scrollBounds, NULL, contentBounds, &device.configScroll, &view);
 
     BeginScissorMode((int)view.x, (int)view.y, (int)view.width, (int)view.height);
 
-    for (size_t i = 0; i < ctx.config.size(); ++i) {
-      auto& param = ctx.config[i];
+    for (size_t i = 0; i < device.config.size(); ++i) {
+      auto& param = device.config[i];
       int row = (int)(i / itemsPerRow);
       int col = (int)(i % itemsPerRow);
 
       float posX = col * itemWidth + 40;
       float posY = row * itemHeight + 10;
 
-      float drawX = posX + ctx.configScroll.x + scrollBounds.x;
-      float drawY = posY + ctx.configScroll.y + scrollBounds.y;
+      float drawX = posX + device.configScroll.x + scrollBounds.x;
+      float drawY = posY + device.configScroll.y + scrollBounds.y;
 
       if (drawY + itemHeight > scrollBounds.y && drawY < scrollBounds.y + scrollBounds.height) {
         if (param.pending) GuiLock();
@@ -362,29 +344,43 @@ void DrawConfigPanel(AppUIContext& ctx, AppSM& sm, ProtocolHandler* protocol) {
   float logPanelY = configPanelHeight + 20;
   GuiGroupBox((Rectangle){220, logPanelY, panelWidth, logPanelHeight}, "Device Logs");
 
-  float logContentHeight = ctx.deviceLogs.size() * 20.0f + 10.0f;
+  float logContentHeight = device.deviceLogs.size() * 20.0f + 10.0f;
   Rectangle logScrollBounds = {230, logPanelY + 20, panelWidth - 20, logPanelHeight - 30};
   Rectangle logContentBounds = {0, 0, panelWidth - 40, logContentHeight};
   Rectangle logView = {0, 0, 0, 0};
 
-  GuiScrollPanel(logScrollBounds, NULL, logContentBounds, &ctx.logScroll, &logView);
+  GuiScrollPanel(logScrollBounds, NULL, logContentBounds, &device.logScroll, &logView);
 
   BeginScissorMode((int)logView.x, (int)logView.y, (int)logView.width, (int)logView.height);
-  for (size_t i = 0; i < ctx.deviceLogs.size(); ++i) {
-    auto& log = ctx.deviceLogs[i];
-    float drawY = logPanelY + 25 + i * 20 + ctx.logScroll.y;
+  for (size_t i = 0; i < device.deviceLogs.size(); ++i) {
+    auto& log = device.deviceLogs[i];
+    float drawY = logPanelY + 25 + i * 20 + device.logScroll.y;
 
     if (drawY + 20 > logScrollBounds.y && drawY < logScrollBounds.y + logScrollBounds.height) {
       Color color = GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL));
-      if (log.level == 1)
-        color = YELLOW;
-      else if (log.level >= 2)
-        color = RED;
+      if (log.level == 1) color = YELLOW;
+      else if (log.level >= 2) color = RED;
 
-      DrawText(TextFormat("[%.2f] %s", log.timestamp, log.message.c_str()), (int)logScrollBounds.x + 5, (int)drawY, 10,
-               color);
+      float spacing = (float)GuiGetStyle(DEFAULT, TEXT_SPACING);
+      float fontSize = (float)GuiGetStyle(DEFAULT, TEXT_SIZE);
+      DrawTextEx(GuiGetFont(), TextFormat("[%.2f] %s", log.timestamp, log.message.c_str()), 
+                 (Vector2){(float)logScrollBounds.x + 5, (float)drawY}, fontSize, spacing, color);
     }
   }
   EndScissorMode();
 }
+
+void Draw(AppUIContext& ctx, AppSM& sm, CommunicationManager::Manager& comms) {
+  using namespace boost::sml::literals;
+  
+  ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+
+  if (sm.is("Welcome"_s)) {
+    DrawWelcomeScreen(ctx);
+  } else {
+    DrawConfigPanel(ctx, sm, comms.getProtocol());
+    DrawSidebar(ctx, sm, comms);
+  }
+}
+
 }  // namespace UIManager
